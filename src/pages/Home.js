@@ -18,7 +18,6 @@ function Home() {
       setRepartidores(lista);
       setCargando(false);
     };
-
     obtenerRepartidores();
   }, []);
 
@@ -27,56 +26,40 @@ function Home() {
   );
 
   return (
-    <div style={styles.container}>
-      <input
-        style={styles.buscador}
-        type="text"
-        placeholder="Buscar por zona (ej: Centro)"
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-      />
+    <div style={styles.pagina}>
+      <div style={styles.hero}>
+        <p style={styles.heroSubtitulo}>Encuentra tu repartidor de confianza</p>
+        <input
+          style={styles.buscador}
+          type="text"
+          placeholder="🔍  Buscar por zona (ej: Centro)"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </div>
 
-      {cargando ? (
-        <p style={styles.mensaje}>Cargando repartidores...</p>
-      ) : repartidoresFiltrados.length === 0 ? (
-        <p style={styles.mensaje}>No se encontraron repartidores en esa zona.</p>
-      ) : (
-        <div style={styles.grid}>
-          {repartidoresFiltrados.map(r => (
+      <div style={styles.contenido}>
+        {cargando ? (
+          <p style={styles.mensaje}>Cargando repartidores...</p>
+        ) : repartidoresFiltrados.length === 0 ? (
+          <p style={styles.mensaje}>No se encontraron repartidores en esa zona.</p>
+        ) : (
+          repartidoresFiltrados.map(r => (
             <RepartidorCard key={r.id} repartidor={r} />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  container: {
-    maxWidth: '900px',
-    margin: '0 auto',
-    padding: '24px 16px',
-  },
-  buscador: {
-    width: '100%',
-    padding: '12px 16px',
-    fontSize: '16px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
-    marginBottom: '24px',
-    outline: 'none',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '16px',
-  },
-  mensaje: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: '40px',
-    fontSize: '16px',
-  }
+  pagina: { backgroundColor: '#f0f4ff', minHeight: '100vh' },
+  hero: { backgroundColor: '#1557b0', padding: '20px 16px 24px' },
+  heroSubtitulo: { color: '#90caf9', fontSize: '13px', textAlign: 'center', margin: '0 0 12px' },
+  buscador: { width: '100%', padding: '12px 16px', fontSize: '15px', borderRadius: '8px', border: 'none', outline: 'none', boxSizing: 'border-box' },
+  contenido: { padding: '16px' },
+  mensaje: { textAlign: 'center', color: '#888', marginTop: '40px', fontSize: '15px' },
 };
 
 export default Home;
