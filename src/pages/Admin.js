@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../services/firebase';
 
 const CONTRASEÑA = 'mandaditos2024';
 
@@ -9,6 +10,8 @@ function Admin() {
   const [intentoContraseña, setIntentoContraseña] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [exito, setExito] = useState(false);
+  const [fotoArchivo, setFotoArchivo] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState(null);
 
   const [form, setForm] = useState({
     nombre: '',
@@ -17,7 +20,6 @@ function Admin() {
     vehiculo: '',
     horario: '',
     descripcion: '',
-    foto: '',
     calificacion: 5,
   });
 
@@ -33,6 +35,13 @@ function Admin() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleFoto = (e) => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+    setFotoArchivo(archivo);
+    setFotoPreview(URL.createObjectURL(archivo));
+  };
+
   const agregarRepartidor = async () => {
     if (!form.nombre || !form.telefono || !form.zona || !form.vehiculo || !form.horario) {
       alert('Llena todos los campos obligatorios');
@@ -41,11 +50,21 @@ function Admin() {
 
     setGuardando(true);
     try {
+      let fotoURL = '';
+
+      if (fotoArchivo) {
+        const storageRef = ref(storage, `fotos/${Date.now()}_${fotoArchivo.name}`);
+        await uploadBytes(storageRef, fotoArchivo);
+        fotoURL = await getDownloadURL(storageRef);
+      }
+
       await addDoc(collection(db, 'repartidores'), {
         ...form,
+        foto: fotoURL,
         calificacion: parseFloat(form.calificacion),
         reseñas: [],
       });
+
       setExito(true);
       setForm({
         nombre: '',
@@ -54,12 +73,14 @@ function Admin() {
         vehiculo: '',
         horario: '',
         descripcion: '',
-        foto: '',
         calificacion: 5,
       });
+      setFotoArchivo(null);
+      setFotoPreview(null);
       setTimeout(() => setExito(false), 3000);
     } catch (error) {
       alert('Error al guardar, intenta de nuevo.');
+      console.log(error);
     }
     setGuardando(false);
   };
@@ -97,6 +118,7 @@ function Admin() {
       )}
 
       <div style={styles.form}>
+
         <div style={styles.campo}>
           <label style={styles.label}>Nombre *</label>
           <input style={styles.input} name="nombre" value={form.nombre} onChange={handleChange} placeholder="Ej: Juan Pérez" />
@@ -130,17 +152,45 @@ function Admin() {
 
         <div style={styles.campo}>
           <label style={styles.label}>Descripción</label>
-          <textarea style={{ ...styles.input, resize: 'none' }} name="descripcion" value={form.descripcion} onChange={handleChange} placeholder="Ej: Mandados rápidos por toda la zona" rows={3} />
+          <textarea
+            style={{ ...styles.input, resize: 'none' }}
+            name="descripcion"
+            value={form.descripcion}
+            onChange={handleChange}
+            placeholder="Ej: Mandados rápidos por toda la zona"
+            rows={3}
+          />
         </div>
 
         <div style={styles.campo}>
-          <label style={styles.label}>URL de foto (opcional)</label>
-          <input style={styles.input} name="foto" value={form.foto} onChange={handleChange} placeholder="https://..." />
+          <label style={styles.label}>Foto del repartidor</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFoto}
+            style={styles.inputFile}
+          />
+          {fotoPreview && (
+            <img
+              src={fotoPreview}
+              alt="Preview"
+              style={styles.preview}
+            />
+          )}
         </div>
 
         <div style={styles.campo}>
           <label style={styles.label}>Calificación inicial (1-5)</label>
-          <input style={styles.input} name="calificacion" type="number" min="1" max="5" step="0.1" value={form.calificacion} onChange={handleChange} />
+          <input
+            style={styles.input}
+            name="calificacion"
+            type="number"
+            min="1"
+            max="5"
+            step="0.1"
+            value={form.calificacion}
+            onChange={handleChange}
+          />
         </div>
 
         <button
@@ -150,6 +200,7 @@ function Admin() {
         >
           {guardando ? 'Guardando...' : '+ Agregar Repartidor'}
         </button>
+
       </div>
     </div>
   );
@@ -167,6 +218,8 @@ const styles = {
   campo: { display: 'flex', flexDirection: 'column', gap: '6px' },
   label: { fontSize: '13px', fontWeight: '600', color: '#444' },
   input: { padding: '10px 14px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+  inputFile: { padding: '8px 0', fontSize: '14px', cursor: 'pointer' },
+  preview: { width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #1a73e8', marginTop: '8px' },
   btnPrincipal: { backgroundColor: '#1a73e8', color: 'white', border: 'none', borderRadius: '8px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', width: '100%' },
 };
 
